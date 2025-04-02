@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shadow Simulation (Like Your Drawing)</title>
+    <script src="https://www.desmos.com/api/v1.7/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .control-group { margin: 15px 0; }
+        label { display: inline-block; width: 180px; font-weight: bold; }
+        button { padding: 8px 15px; margin-right: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #calculator { width: 100%; height: 500px; margin: 20px 0; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Shadow Simulation (Like Your Drawing)</h2>
+        
+        <div class="control-group">
+            <label for="lampHeight">Lamp Post Height (H):</label>
+            <input type="range" id="lampHeight" min="3" max="10" step="0.1" value="6">
+            <span id="lampHeightValue">6.0</span> m
+        </div>
+        
+        <div class="control-group">
+            <label for="personHeight">Person Height (h):</label>
+            <input type="range" id="personHeight" min="1" max="2.5" step="0.01" value="1.78">
+            <span id="personHeightValue">1.78</span> m
+        </div>
+        
+        <div class="control-group">
+            <label for="position">Distance from Lamp (x):</label>
+            <input type="range" id="position" min="0" max="15" step="0.1" value="5">
+            <span id="positionValue">5.0</span> m
+        </div>
+        
+        <button onclick="startAnimation()">▶️ Animate</button>
+        <button onclick="stopAnimation()">⏸️ Pause</button>
+        <button onclick="reset()">🔄 Reset</button>
+        
+        <div id="calculator"></div>
+        
+        <div class="control-group">
+            <p><strong>Shadow Length (y):</strong> <span id="shadowLength">2.11</span> m</p>
+            <p><strong>Shadow Tip Speed:</strong> <span id="shadowSpeed">3.56</span> m/s (when moving)</p>
+        </div>
+    </div>
+
+    <script>
+        let calculator;
+        let isAnimating = false;
+        let animationId;
+        const walkSpeed = 2.5; // m/s (as in your document)
+        
+        function init() {
+            calculator = Desmos.GraphingCalculator(document.getElementById('calculator'), {
+                expressions: false,
+                settingsMenu: false,
+                zoomButtons: false,
+                xAxisLabel: 'Distance (m)',
+                yAxisLabel: 'Height (m)'
+            });
+            updateGraph();
+            
+            // Event listeners
+            document.getElementById('lampHeight').addEventListener('input', function() {
+                document.getElementById('lampHeightValue').textContent = this.value;
+                updateGraph();
+            });
+            
+            document.getElementById('personHeight').addEventListener('input', function() {
+                document.getElementById('personHeightValue').textContent = this.value;
+                updateGraph();
+            });
+            
+            document.getElementById('position').addEventListener('input', function() {
+                document.getElementById('positionValue').textContent = this.value;
+                updateGraph();
+            });
+        }
+        
+        function updateGraph() {
+            const H = parseFloat(document.getElementById('lampHeight').value);
+            const h = parseFloat(document.getElementById('personHeight').value);
+            const x = parseFloat(document.getElementById('position').value);
+            const y = (h * x) / (H - h); // Shadow length
+            const shadowTipSpeed = (H / (H - h)) * walkSpeed;
+            
+            // Update displays
+            document.getElementById('shadowLength').textContent = y.toFixed(2);
+            document.getElementById('shadowSpeed').textContent = shadowTipSpeed.toFixed(2);
+            
+            // Set graph bounds
+            calculator.setMathBounds({
+                left: -1,
+                right: Math.max(x + y + 2, 15),
+                bottom: -1,
+                top: H + 2
+            });
+            
+            // Clear previous and draw new elements
+            calculator.setExpressions([
+                // Lamp Post
+                { id: 'lampBase', latex: '-0.2 < x < 0.2 \\left\\{0 < y < 0.3\\right\\}', color: '#555', fillOpacity: 0.7 },
+                { id: 'lampPole', latex: '-0.1 < x < 0.1 \\left\\{0.3 < y < ' + H + '\\right\\}', color: '#777' },
+                { id: 'lampHead', latex: 'x^2 + (y-' + H + ')^2 < 0.3^2', color: '#FFA500', fillOpacity: 0.7 },
+                
+                // Person
+                { id: 'personBody', latex: '(x-' + x + ')^2 + (y-' + (h*0.5) + ')^2 < ' + (h*0.2) + '^2 \\left\\{y>' + (h*0.2) + '\\right\\}', color: '#2196F3' },
+                { id: 'personHead', latex: '(x-' + x + ')^2 + (y-' + (h*0.9) + ')^2 < ' + (h*0.1) + '^2', color: '#FFC0CB' },
+                { id: 'personLegs', latex: '(x-' + x + ')^2 + (y-' + (h*0.2) + ')^2 < ' + (h*0.15) + '^2 \\left\\{y<' + (h*0.4) + '\\right\\}', color: '#0D47A1' },
+                
+                // Shadow
+                { id: 'shadow', latex: x + ' < x < ' + (x+y) + ' \\left\\{-0.05 < y < 0.05\\right\\}', color: '#333', fillOpacity: 0.5 },
+                
+                // Light Rays (forming the triangle)
+                { id: 'ray1', latex: 'y = ' + H + ' - (' + H + '/' + x + ')*x \\left\\{0 < x < ' + x + '\\right\\}', 
+                  color: '#FFEB3B', lineStyle: 'DASHED', lineWidth: 2 },
+                { id: 'ray2', latex: 'y = ' + H + ' - (' + H + '/' + (x+y) + ')*x \\left\\{0 < x < ' + (x+y) + '\\right\\}', 
+                  color: '#FFEB3B', lineStyle: 'DASHED', lineWidth: 2 },
+                
+                // Ground
+                { id: 'ground', latex: 'y=0', color: '#4CAF50', lineWidth: 2 },
+                
+                // Labels
+                { id: 'lampLabel', latex: '(0,' + (H+0.5) + ')', label: 'Lamp (' + H + 'm)', showLabel: true },
+                { id: 'personLabel', latex: '(' + x + ',' + (h+0.3) + ')', label: 'Person (' + h + 'm)', showLabel: true },
+                { id: 'shadowLabel', latex: '(' + (x+y/2) + ',-0.3)', label: 'Shadow (' + y.toFixed(2) + 'm)', showLabel: true }
+            ]);
+        }
+        
+        function startAnimation() {
+            if (isAnimating) return;
+            isAnimating = true;
+            let lastTime = performance.now();
+            
+            function animate(currentTime) {
+                const deltaTime = (currentTime - lastTime) / 1000; // seconds
+                lastTime = currentTime;
+                
+                const positionSlider = document.getElementById('position');
+                let x = parseFloat(positionSlider.value);
+                x += walkSpeed * deltaTime;
+                
+                if (x > 15) {
+                    reset();
+                    return;
+                }
+                
+                positionSlider.value = x;
+                document.getElementById('positionValue').textContent = x.toFixed(1);
+                updateGraph();
+                
+                if (isAnimating) {
+                    animationId = requestAnimationFrame(animate);
+                }
+            }
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        function stopAnimation() {
+            isAnimating = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        }
+        
+        function reset() {
+            stopAnimation();
+            document.getElementById('position').value = 5;
+            document.getElementById('positionValue').textContent = '5.0';
+            updateGraph();
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
