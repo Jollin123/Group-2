@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shadow Rate Problems Proof</title>
+    <script src="https://www.desmos.com/api/v1.7/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .control-group { margin: 15px 0; }
+        label { display: inline-block; width: 220px; font-weight: bold; }
+        button { padding: 8px 15px; margin-right: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #calculator { width: 100%; height: 400px; margin: 20px 0; border: 1px solid #ddd; }
+        .measurements { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
+        .measurement-box { flex: 1; min-width: 200px; background: #f9f9f9; padding: 10px; border-radius: 5px; border-left: 4px solid #4CAF50; }
+        .measurement-value { font-size: 1.2em; font-weight: bold; color: #2196F3; }
+        .problem-selector { margin: 15px 0; padding: 10px; background: #e3f2fd; border-radius: 5px; }
+        input[type="number"] { width: 80px; padding: 5px; }
+        .proof { background: #fff8e1; padding: 15px; border-radius: 5px; margin: 15px 0; font-family: monospace; }
+        .proof-step { margin: 5px 0; }
+        .input-group { display: none; }
+        .active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Shadow Rate Problems Mathematical Proof</h2>
+        
+        <div class="problem-selector">
+            <h3>Select Problem:</h3>
+            <button onclick="loadProblem(1)">Problem 1: Walking Towards Light</button>
+            <button onclick="loadProblem(2)">Problem 2: Given Shadow Speed</button>
+            <button onclick="loadProblem(3)">Problem 3: Walking Away</button>
+        </div>
+        
+        <div id="standardInputs" class="input-group active">
+            <div class="control-group">
+                <label for="lampHeight">Lamp Post Height (H):</label>
+                <input type="number" id="lampHeight" step="0.01" value="6.00"> m
+            </div>
+            <div class="control-group">
+                <label for="personHeight">Person Height (h):</label>
+                <input type="number" id="personHeight" step="0.01" value="1.78"> m
+            </div>
+            <div class="control-group">
+                <label for="walkingSpeed">Walking Speed (dx/dt):</label>
+                <input type="number" id="walkingSpeed" step="0.01" value="2.50"> m/s
+            </div>
+            <div class="control-group">
+                <label for="position">Distance from Lamp (x):</label>
+                <input type="number" id="position" step="0.01" value="5.00"> m
+            </div>
+        </div>
+        
+        <div id="problem2Inputs" class="input-group">
+            <div class="control-group">
+                <label for="p2LampHeight">Lamp Post Height (H):</label>
+                <input type="number" id="p2LampHeight" step="0.01" value="5.00"> m
+            </div>
+            <div class="control-group">
+                <label for="p2PersonHeight">Person Height (h):</label>
+                <input type="number" id="p2PersonHeight" step="0.01" value="1.70"> m
+            </div>
+            <div class="control-group">
+                <label for="p2ShadowLength">Shadow Length (y):</label>
+                <input type="number" id="p2ShadowLength" step="0.01" value="3.00"> m
+            </div>
+            <div class="control-group">
+                <label for="p2ShadowSpeed">Shadow Tip Speed (d(x+y)/dt):</label>
+                <input type="number" id="p2ShadowSpeed" step="0.01" value="2.00"> m/s
+            </div>
+        </div>
+        
+        <button onclick="calculate()">Calculate</button>
+        <button onclick="reset()">Reset</button>
+        
+        <div id="calculator"></div>
+        
+        <div class="proof" id="mathematicalProof">
+            <h3>Mathematical Proof:</h3>
+            <div id="proofSteps"></div>
+        </div>
+        
+        <div class="measurements">
+            <div class="measurement-box">
+                <p><strong>Shadow Length (y):</strong></p>
+                <p class="measurement-value"><span id="shadowLength">2.11</span> m</p>
+            </div>
+            <div class="measurement-box">
+                <p><strong>Shadow Rate (dy/dt):</strong></p>
+                <p class="measurement-value"><span id="shadowRate">1.06</span> m/s</p>
+            </div>
+            <div class="measurement-box">
+                <p><strong>Walking Speed (dx/dt):</strong></p>
+                <p class="measurement-value"><span id="walkingSpeedResult">2.50</span> m/s</p>
+            </div>
+            <div class="measurement-box">
+                <p><strong>Shadow Tip Speed (d(x+y)/dt):</strong></p>
+                <p class="measurement-value"><span id="shadowTipSpeed">3.56</span> m/s</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let calculator;
+        let currentProblem = 1;
+        
+        function init() {
+            calculator = Desmos.GraphingCalculator(document.getElementById('calculator'), {
+                expressions: false,
+                settingsMenu: false,
+                zoomButtons: false,
+                xAxisLabel: 'Distance (m)',
+                yAxisLabel: 'Height (m)'
+            });
+            
+            calculate();
+        }
+        
+        function calculate() {
+            if (currentProblem === 2) {
+                calculateProblem2();
+            } else {
+                calculateStandardProblem();
+            }
+        }
+        
+        function calculateStandardProblem() {
+            const H = parseFloat(document.getElementById('lampHeight').value);
+            const h = parseFloat(document.getElementById('personHeight').value);
+            const x = parseFloat(document.getElementById('position').value);
+            const dx_dt = parseFloat(document.getElementById('walkingSpeed').value);
+            
+            // Calculate shadow length (y)
+            const y = (h * x) / (H - h);
+            
+            // Calculate rates
+            const dy_dt = (h / (H - h)) * dx_dt;
+            const d_shadowTip_dt = dx_dt + dy_dt;
+            
+            // Update displayed values
+            document.getElementById('shadowLength').textContent = y.toFixed(2);
+            document.getElementById('shadowRate').textContent = dy_dt.toFixed(2);
+            document.getElementById('walkingSpeedResult').textContent = dx_dt.toFixed(2);
+            document.getElementById('shadowTipSpeed').textContent = d_shadowTip_dt.toFixed(2);
+            
+            // Update graph
+            updateGraph(H, h, x, y);
+            
+            // Generate proof
+            generateStandardProof(H, h, x, dx_dt, y, dy_dt, d_shadowTip_dt);
+        }
+        
+        function calculateProblem2() {
+            const H = parseFloat(document.getElementById('p2LampHeight').value);
+            const h = parseFloat(document.getElementById('p2PersonHeight').value);
+            const y = parseFloat(document.getElementById('p2ShadowLength').value);
+            const d_shadowTip_dt = parseFloat(document.getElementById('p2ShadowSpeed').value);
+            
+            // Calculate position (x) from shadow length
+            const x = (y * (H - h)) / h;
+            
+            // Calculate walking speed (dx/dt)
+            const ratio = H / (H - h);
+            const dx_dt = d_shadowTip_dt / ratio;
+            const dy_dt = d_shadowTip_dt - dx_dt;
+            
+            // Update displayed values
+            document.getElementById('shadowLength').textContent = y.toFixed(2);
+            document.getElementById('shadowRate').textContent = dy_dt.toFixed(2);
+            document.getElementById('walkingSpeedResult').textContent = dx_dt.toFixed(2);
+            document.getElementById('shadowTipSpeed').textContent = d_shadowTip_dt.toFixed(2);
+            
+            // Update graph
+            updateGraph(H, h, x, y);
+            
+            // Generate proof
+            generateProblem2Proof(H, h, x, dx_dt, y, dy_dt, d_shadowTip_dt);
+        }
+        
+        function updateGraph(H, h, x, y) {
+            calculator.setMathBounds({
+                left: -1,
+                right: Math.max(x + y + 2, 15),
+                bottom: -1,
+                top: H + 2
+            });
+            
+            calculator.setExpressions([
+                { id: 'lampBase', latex: '-0.2 < x < 0.2 \\left\\{0 < y < 0.3\\right\\}', color: '#555', fillOpacity: 0.7 },
+                { id: 'lampPole', latex: '-0.1 < x < 0.1 \\left\\{0.3 < y < ' + H + '\\right\\}', color: '#777' },
+                { id: 'lampHead', latex: 'x^2 + (y-' + H + ')^2 < 0.3^2', color: '#FFA500', fillOpacity: 0.7 },
+                { id: 'personBody', latex: '(x-' + x + ')^2 + (y-' + (h*0.5) + ')^2 < ' + (h*0.2) + '^2 \\left\\{y>' + (h*0.2) + '\\right\\}', color: '#2196F3' },
+                { id: 'personHead', latex: '(x-' + x + ')^2 + (y-' + (h*0.9) + ')^2 < ' + (h*0.1) + '^2', color: '#FFC0CB' },
+                { id: 'personLegs', latex: '(x-' + x + ')^2 + (y-' + (h*0.2) + ')^2 < ' + (h*0.15) + '^2 \\left\\{y<' + (h*0.4) + '\\right\\}', color: '#0D47A1' },
+                { id: 'shadow', latex: x + ' < x < ' + (x+y) + ' \\left\\{-0.05 < y < 0.05\\right\\}', color: '#333', fillOpacity: 0.5 },
+                { id: 'ray1', latex: 'y = ' + H + ' - (' + H + '/' + x + ')*x \\left\\{0 < x < ' + x + '\\right\\}', color: '#FFEB3B', lineStyle: 'DASHED', lineWidth: 2 },
+                { id: 'ray2', latex: 'y = ' + H + ' - (' + H + '/' + (x+y) + ')*x \\left\\{0 < x < ' + (x+y) + '\\right\\}', color: '#FFEB3B', lineStyle: 'DASHED', lineWidth: 2 },
+                { id: 'ground', latex: 'y=0', color: '#4CAF50', lineWidth: 2 },
+                { id: 'lampLabel', latex: '(0,' + (H+0) + ')', label: 'Lamp (' + H.toFixed(2) + 'm)', showLabel: true },
+                { id: 'personLabel', latex: '(' + x.toFixed(2) + ',' + (h+0) + ')', label: 'Person (' + h.toFixed(2) + 'm)', showLabel: true },
+                { id: 'shadowLabel', latex: '(' + (x+y/2).toFixed(2) + ',-0)', label: 'Shadow (' + y.toFixed(2) + 'm)', showLabel: true }
+            ]);
+        }
+        
+        function generateStandardProof(H, h, x, dx_dt, y, dy_dt, d_shadowTip_dt) {
+            const proofSteps = document.getElementById('proofSteps');
+            proofSteps.innerHTML = '';
+            
+            addProofStep(`<strong>Step 1: Given Information</strong>`);
+            addProofStep(`Height of lamp post (H) = ${H.toFixed(2)} m`);
+            addProofStep(`Height of person (h) = ${h.toFixed(2)} m`);
+            addProofStep(`Distance from lamp (x) = ${x.toFixed(2)} m`);
+            addProofStep(`Walking speed (dx/dt) = ${dx_dt.toFixed(2)} m/s`);
+            
+            addProofStep(`<strong>Step 2: Similar Triangles Relationship</strong>`);
+            addProofStep(`H/h = (x + y)/y`);
+            addProofStep(`${H.toFixed(2)}/${h.toFixed(2)} = (${x.toFixed(2)} + y)/y`);
+            
+            addProofStep(`<strong>Step 3: Solve for Shadow Length (y)</strong>`);
+            addProofStep(`${H.toFixed(2)}y = ${h.toFixed(2)}(${x.toFixed(2)} + y)`);
+            addProofStep(`${H.toFixed(2)}y = ${(h*x).toFixed(2)} + ${h.toFixed(2)}y`);
+            addProofStep(`${(H-h).toFixed(2)}y = ${(h*x).toFixed(2)}`);
+            addProofStep(`y = ${(h*x).toFixed(2)} / ${(H-h).toFixed(2)}`);
+            addProofStep(`y = ${y.toFixed(2)} m`);
+            
+            addProofStep(`<strong>Step 4: Find Shadow Rate (dy/dt)</strong>`);
+            addProofStep(`From y = (${h.toFixed(2)}x) / ${(H-h).toFixed(2)}`);
+            addProofStep(`dy/dt = (${h.toFixed(2)}/${(H-h).toFixed(2)}) * dx/dt`);
+            addProofStep(`dy/dt = ${(h/(H-h)).toFixed(3)} * ${dx_dt.toFixed(2)}`);
+            addProofStep(`dy/dt = ${dy_dt.toFixed(2)} m/s`);
+            
+            addProofStep(`<strong>Step 5: Shadow Tip Speed</strong>`);
+            addProofStep(`d(x+y)/dt = dx/dt + dy/dt`);
+            addProofStep(`= ${dx_dt.toFixed(2)} + ${dy_dt.toFixed(2)}`);
+            addProofStep(`= ${d_shadowTip_dt.toFixed(2)} m/s`);
+            
+            addProofStep(`<strong>Interpretation:</strong>`);
+            addProofStep(`The shadow tip moves at ${d_shadowTip_dt.toFixed(2)} m/s when the person walks at ${dx_dt.toFixed(2)} m/s.`);
+            addProofStep(`This is ${(d_shadowTip_dt/dx_dt).toFixed(2)} times faster than the walking speed.`);
+        }
+        
+        function generateProblem2Proof(H, h, x, dx_dt, y, dy_dt, d_shadowTip_dt) {
+            const proofSteps = document.getElementById('proofSteps');
+            proofSteps.innerHTML = '';
+            
+            addProofStep(`<strong>Step 1: Given Information</strong>`);
+            addProofStep(`Height of lamp post (H) = ${H.toFixed(2)} m`);
+            addProofStep(`Height of person (h) = ${h.toFixed(2)} m`);
+            addProofStep(`Shadow length 👍 = ${y.toFixed(2)} m`);
+            addProofStep(`Shadow tip speed (d(x+y)/dt) = ${d_shadowTip_dt.toFixed(2)} m/s`);
+            
+            addProofStep(`<strong>Step 2: Find Position (x) from Shadow Length</strong>`);
+            addProofStep(`From similar triangles: H/h = (x + y)/y`);
+            addProofStep(`${H.toFixed(2)}/${h.toFixed(2)} = (x + ${y.toFixed(2)})/${y.toFixed(2)}`);
+            addProofStep(`${H.toFixed(2)} * ${y.toFixed(2)} = ${h.toFixed(2)} * (x + ${y.toFixed(2)})`);
+            addProofStep(`${(H*y).toFixed(2)} = ${h.toFixed(2)}x + ${(h*y).toFixed(2)}`);
+            addProofStep(`${(H*y - h*y).toFixed(2)} = ${h.toFixed(2)}x`);
+            addProofStep(`x = ${((H*y - h*y)/h).toFixed(2)} / ${h.toFixed(2)}`);
+            addProofStep(`x = ${x.toFixed(2)} m`);
+            
+            addProofStep(`<strong>Step 3: Relationship Between Rates</strong>`);
+            addProofStep(`We know: d(x+y)/dt = ${d_shadowTip_dt.toFixed(2)} m/s`);
+            addProofStep(`And from similar triangles: y = (${h.toFixed(2)}x) / ${(H-h).toFixed(2)}`);
+            addProofStep(`Therefore: dy/dt = (${h.toFixed(2)}/${(H-h).toFixed(2)}) * dx/dt`);
+            addProofStep(`And: d(x+y)/dt = dx/dt + dy/dt = (1 + ${h.toFixed(2)}/${(H-h).toFixed(2)}) * dx/dt`);
+            addProofStep(`= (${H.toFixed(2)}/${(H-h).toFixed(2)}) * dx/dt`);
+            
+            addProofStep(`<strong>Step 4: Solve for Walking Speed (dx/dt)</strong>`);
+            addProofStep(`dx/dt = (${(H-h).toFixed(2)}/${H.toFixed(2)}) * d(x+y)/dt`);
+            addProofStep(`= ${((H-h)/H).toFixed(3)} * ${d_shadowTip_dt.toFixed(2)}`);
+            addProofStep(`= ${dx_dt.toFixed(2)} m/s`);
+            
+            addProofStep(`<strong>Step 5: Find Shadow Rate (dy/dt)</strong>`);
+            addProofStep(`dy/dt = d(x+y)/dt - dx/dt`);
+            addProofStep(`= ${d_shadowTip_dt.toFixed(2)} - ${dx_dt.toFixed(2)}`);
+            addProofStep(`= ${dy_dt.toFixed(2)} m/s`);
+            
+            addProofStep(`<strong>Interpretation:</strong>`);
+            addProofStep(`When the shadow tip moves at ${d_shadowTip_dt.toFixed(2)} m/s with a shadow length of ${y.toFixed(2)} m,`);
+            addProofStep(`the person must be walking at ${dx_dt.toFixed(2)} m/s.`);
+        }
+        
+        function addProofStep(step) {
+            const div = document.createElement('div');
+            div.className = 'proof-step';
+            div.innerHTML = step;
+            document.getElementById('proofSteps').appendChild(div);
+        }
+        
+        function loadProblem(problemNum) {
+            currentProblem = problemNum;
+            
+            // Hide all input groups
+            document.querySelectorAll('.input-group').forEach(group => {
+                group.classList.remove('active');
+            });
+            
+            if (problemNum === 2) {
+                document.getElementById('problem2Inputs').classList.add('active');
+                document.getElementById('p2LampHeight').value = '5.00';
+                document.getElementById('p2PersonHeight').value = '1.70';
+                document.getElementById('p2ShadowLength').value = '3.00';
+                document.getElementById('p2ShadowSpeed').value = '2.00';
+            } else {
+                document.getElementById('standardInputs').classList.add('active');
+                if (problemNum === 1) {
+                    document.getElementById('lampHeight').value = '4.00';
+                    document.getElementById('personHeight').value = '1.70';
+                    document.getElementById('walkingSpeed').value = '-1.20';
+                    document.getElementById('position').value = '5.00';
+                } else if (problemNum === 3) {
+                    document.getElementById('lampHeight').value = '8.00';
+                    document.getElementById('personHeight').value = '2.00';
+                    document.getElementById('walkingSpeed').value = '3.00';
+                    document.getElementById('position').value = '10.00';
+                }
+            }
+            calculate();
+        }
+        
+        function reset() {
+            if (currentProblem === 2) {
+                document.getElementById('p2LampHeight').value = '5.00';
+                document.getElementById('p2PersonHeight').value = '1.70';
+                document.getElementById('p2ShadowLength').value = '3.00';
+                document.getElementById('p2ShadowSpeed').value = '2.00';
+            } else {
+                document.getElementById('lampHeight').value = '6.00';
+                document.getElementById('personHeight').value = '1.78';
+                document.getElementById('walkingSpeed').value = '2.50';
+                document.getElementById('position').value = '5.00';
+            }
+            calculate();
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
